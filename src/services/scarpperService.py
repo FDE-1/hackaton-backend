@@ -1,11 +1,10 @@
 import time
-import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 
@@ -40,7 +39,7 @@ def scrape_cdiscount_reviews_paginated(url: str):
     """Scrape tous les avis d'une page produit Cdiscount en gérant la pagination."""
     print("Démarrage du scraper avec pagination...")
     options = webdriver.ChromeOptions()
-    # options.add_argument("--headless") # Désactivez le mode headless pour le débogage si nécessaire
+
     options.add_argument("--start-maximized")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
     
@@ -49,7 +48,6 @@ def scrape_cdiscount_reviews_paginated(url: str):
     driver.get(url)
     print(f"Page chargée : {url}")
 
-    # --- Étape 1 : Gérer les cookies ---
     try:
         wait.until(EC.element_to_be_clickable((By.ID, 'footer_tc_privacy_button_2'))).click()
         print("Cookies acceptés.")
@@ -59,7 +57,6 @@ def scrape_cdiscount_reviews_paginated(url: str):
     all_reviews = []
     page_number = 1
 
-    # --- Étape 2 : Boucler sur les pages d'avis ---
     while True:
         print(f"Extraction des avis de la page {page_number}...")
         
@@ -76,14 +73,13 @@ def scrape_cdiscount_reviews_paginated(url: str):
             print("Aucun nouvel avis trouvé sur cette page, probablement la fin.")
             break
         
-        # On va s'assurer de ne pas ajouter de doublons
         new_reviews = [rev for rev in reviews_from_this_page if rev not in all_reviews]
         if not new_reviews and page_number > 1:
             print("Aucun NOUVEL avis trouvé. La pagination semble boucler. Arrêt.")
             break
             
         all_reviews.extend(new_reviews)
-        print(f"{len(new_reviews)} avis extraits. Total : {len(all_reviews)}")
+        # print(f"{len(new_reviews)} avis extraits. Total : {len(all_reviews)}")
 
         try:
             next_button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input.js-update-accordion-click[value='Suivant']")))
@@ -98,18 +94,3 @@ def scrape_cdiscount_reviews_paginated(url: str):
 
     driver.quit()
     return all_reviews
-
-# if __name__ == '__main__':
-#     product_url = 'https://www.cdiscount.com/informatique/clavier-souris-webcam/souris-gamer-filaire-logitech-g-g203-light/f-1070214-log5099206089167.html'
-    
-#     final_reviews = scrape_cdiscount_reviews_paginated(product_url)
-    
-#     print(f"\n--- EXTRACTION TERMINÉE : {len(final_reviews)} avis au total ---")
-    
-#     # --- DÉBUT DES LIGNES AJOUTÉES ---
-#     # Sauvegarder la liste dans un fichier JSON
-#     with open('reviews.json', 'w', encoding='utf-8') as f:
-#         json.dump(final_reviews, f, ensure_ascii=False, indent=4)
-
-#     print("\n✅ Résultat sauvegardé avec succès dans le fichier 'reviews.json'")
-#     # --- FIN DES LIGNES AJOUTÉES ---
