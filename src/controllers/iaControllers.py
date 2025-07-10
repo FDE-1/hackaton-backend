@@ -1,16 +1,14 @@
-from fastapi import HTTPException
-from pydantic import BaseModel
+from flask import request
 from ..services.iaService import query_ollama
 
-class PromptRequest(BaseModel):
-    prompt: str
-
-async def generate(request: PromptRequest):
-    if not request.prompt:
-        raise HTTPException(status_code=400, detail="Prompt is required")
+async def generate():
+    data = request.get_json()
+    print(data)
+    if not data or not data.get('prompt'):
+        return {"error": "Prompt is required"}, 400
     
     try:
-        result = await query_ollama(request.prompt)
+        result = await query_ollama(data['prompt'])
         return {"response": result}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de l'appel au modèle: {str(e)}")
+        return {"error": f"Erreur lors de l'appel au modèle: {str(e)}"}, 500
